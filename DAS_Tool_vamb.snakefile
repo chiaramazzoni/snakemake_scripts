@@ -135,11 +135,11 @@ rule cat_contigs:
         int(1)
     log:
         join(outdir,"/vamb/log/contigs/catcontigs.log")
-    conda:
-        "envs/vamb.yaml"
+    #conda:
+    #    "envs/vamb.yaml"
     shell:"""
          mkdir -p {params.outfolder}
-         concatenate.py {output} {input} -m 2000
+         /vol/sci/bio/data/moran.yassour/lab/Tools/vamb/bin/concatenate.py {output} {input} -m 2000
       """
 
 rule index:
@@ -154,7 +154,7 @@ rule index:
     log:
         join(outdir,"/vamb/log/contigs/index.log")
     conda: 
-        "envs/minimap2.yaml"
+        "/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/minimap2.yaml"
     shell:
         "minimap2 -I {INDEX_SIZE} -d {output} {input} 2> {log}"
 
@@ -170,7 +170,7 @@ rule dict:
     log:
         join(outdir,"/vamb/log/contigs/dict.log")
     conda:
-        "envs/samtools.yaml"
+        "/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/samtools.yaml"
     shell:
         "samtools dict {input} | cut -f1-3 > {output} 2> {log}"
 
@@ -188,7 +188,7 @@ rule minimap:
     log:
         join(outdir,"/vamb/log/map/{sample}.minimap.log")
     conda:
-        "envs/minimap2.yaml"
+        "/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/minimap2.yaml"
     shell:
         '''minimap2 -t {threads} -ax sr {input.mmi} {input.fq} | grep -v "^@" | cat {input.dict} - | samtools view -F 3584 -b - > {output.bam} 2>{log}'''
 
@@ -205,7 +205,7 @@ rule sort:
     log:
         join(outdir,"/vamb/log/map/{sample}.sort.log")
     conda:
-        "envs/samtools.yaml"
+        "/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/samtools.yaml"
     shell:
         "samtools sort {input} -T {params.prefix} --threads 1 -m 3G -o {output} 2>{log}"
 
@@ -221,7 +221,7 @@ rule jgi:
     log:
         join(outdir,"/vamb/log/jgi/{sample}.jgi")
     conda:
-        "envs/metabat2.yaml"
+        "/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/metabat2.yaml"
     shell:
         "jgi_summarize_bam_contig_depths --noIntraDepthVariance --outputDepth {output} {input} 2>{log}"
 
@@ -264,8 +264,8 @@ rule paste_abundances:
 
 rule vamb:
     input:
-        jgi = "jgi_matrix/jgi.abundance.dat",
-        contigs = "contigs.flt.fna.gz"
+        jgi = join(outdir,"/vamb/jgi_matrix/jgi.abundance.dat"),
+        contigs = join(outdir,"/vamb/contigs.flt.fna.gz")
     output:
         join(outdir,"/vamb/clusters.tsv"),
         join(outdir,"/vamb/latent.npz"),
@@ -275,33 +275,35 @@ rule vamb:
         join(outdir,"/vamb/mask.npz"),
         join(outdir,"/vamb/tnf.npz")
     params:
+        vamb_folder = join(outdir,"/vamb")
         walltime="86400", nodes="1", ppn=VAMB_PPN, mem=VAMB_MEM
     log:
-        join(outdir,"vamb/log/vamb.log")
+        join(outdir,"/vamb/log/vamb.log")
     threads:
         int(VAMB_threads)
-    conda:
-        "envs/vamb.yaml"
+    #conda:
+        #"/vol/sci/bio/data/moran.yassour/lab/Tools/vamb/workflow/envs/vamb.yaml"
     shell:"""
         {VAMB_PRELOAD}
-        rm -rf vamb
-        vamb --outdir vamb --fasta {input.contigs} --jgi {input.jgi} {VAMB_PARAMS} 2>{log}
+        #rm -rf vamb
+        /vol/sci/bio/data/moran.yassour/lab/Tools/vamb/bin/vamb --outdir {params.vamb} --fasta {input.contigs} --jgi {input.jgi} {VAMB_PARAMS} 2>{log}
         """
 
 #rule split_sample_bins:
 #essential for running DAS_Tool as we are used to
 
+##### to revise
 
 rule checkm_vamb:
     input:
-        "vamb/clusters.tsv"
+        join(outdir,"/vamb/clusters.tsv")
     output:
-        join(outdir,"{sample}/vamb/checkm.tsv"
+        join(outdir,"/vamb/checkm.tsv")
     params:
-        bins = join(outdir,"{sample}/vamb/bins"),
-        outdir = join(outdir,"{sample}/vamb/checkm")
+        bins = join(outdir,"/vamb/bins"),
+        outdir = join(outdir,"/vamb/checkm")
     log:
-        join(outdir, "{sample}/vamb/log/checkm.log")
+        join(outdir, "/vamb/log/checkm.log")
     resources:
         mem = 128,
         time = 12
