@@ -286,7 +286,7 @@ rule vamb:
     shell:"""
         {VAMB_PRELOAD}
         #rm -rf vamb
-        /vol/sci/bio/data/moran.yassour/lab/Tools/vamb/bin/vamb --outdir {params.vamb} --fasta {input.contigs} --jgi {input.jgi} {VAMB_PARAMS} 2>{log}
+        python3 /vol/sci/bio/data/moran.yassour/lab/Tools/vamb/vamb --outdir {params.vamb} --fasta {input.contigs} --jgi {input.jgi} {VAMB_PARAMS} 2>{log}
         """
 
 #rule split_sample_bins:
